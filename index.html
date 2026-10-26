@@ -4,6 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OFL League Order Tracker</title>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBHnS8LDfEpB68cktxMhwCNUuBcI8VXtaQ",
+    authDomain: "ofl-league-tracker.firebaseapp.com",
+    projectId: "ofl-league-tracker",
+    storageBucket: "ofl-league-tracker.firebasestorage.app",
+    messagingSenderId: "854506865712",
+    appId: "1:854506865712:web:b3a2139620a57e91bb19f5"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const dataDoc = doc(db, "tracker", "leagueData");
+
+  window.db = db;
+  window.dataDoc = dataDoc;
+  window.getDoc = getDoc;
+  window.setDoc = setDoc;
+  window.onSnapshot = onSnapshot;
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" onerror="console.warn('jsPDF failed to load')"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js" onerror="console.warn('jsPDF AutoTable failed to load')"></script>
 <style>
@@ -125,15 +148,36 @@ const defaultData = {
 };
 
 let data;
-try {
-  const stored = localStorage.getItem('leagueTracker');
-  data = stored ? JSON.parse(stored) : null;
-  if (!data || !data.leagues || !data.supplierList) data = null;
-} catch (e) {
-  console.warn('localStorage data corrupted, using default');
-  data = null;
+let dataLoaded = false;
+
+async function loadData() {
+  try {
+    const docSnap = await window.getDoc(window.dataDoc);
+    if (docSnap.exists()) {
+      data = docSnap.data();
+      if (!data || !data.leagues || !data.supplierList) data = null;
+    }
+  } catch (e) {
+    console.warn('Firestore load failed, using default');
+    data = null;
+  }
+  data = data || JSON.parse(JSON.stringify(defaultData));
+  dataLoaded = true;
+  render();
+  setupRealtimeSync();
 }
-data = data || JSON.parse(JSON.stringify(defaultData));
+
+function setupRealtimeSync() {
+  window.onSnapshot(window.dataDoc, (docSnap) => {
+    if (docSnap.exists()) {
+      const remoteData = docSnap.data();
+      if (remoteData && remoteData.leagues && remoteData.supplierList) {
+        data = remoteData;
+        render();
+      }
+    }
+  });
+}
 
 function fmt(n) { return 'RM ' + n.toFixed(2); }
 
@@ -149,9 +193,9 @@ function renderSupplierList() {
   data.supplierList.forEach((item, i) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input style="width:140px;" value="${item.name}" onchange="data.supplierList[${i}].name=this.value;saveData()"></td>
-      <td><input style="width:80px;" value="${item.size}" onchange="data.supplierList[${i}].size=this.value;saveData()"></td>
-      <td><input type="number" step="0.01" style="width:80px;" value="${item.price}" onchange="data.supplierList[${i}].price=+this.value;saveData()"></td>
+      <td><input style="width:140px;" value="${item.name}" onchange="data.supplierList[${i}].name=this.value;saveData(false)"></td>
+      <td><input style="width:80px;" value="${item.size}" onchange="data.supplierList[${i}].size=this.value;saveData(false)"></td>
+      <td><input type="number" step="0.01" style="width:80px;" value="${item.price}" onchange="data.supplierList[${i}].price=+this.value;saveData(false)"></td>
       <td><button class="btn btn-remove" onclick="removeSupplierItem(${i})">X</button></td>
     `;
     tbody.appendChild(tr);
@@ -161,13 +205,13 @@ function renderSupplierList() {
 function addSupplierItem() {
   data.supplierList.push({ name: "", size: "", price: 0 });
   renderSupplierList();
-  saveData();
+  saveData(false);
 }
 
 function removeSupplierItem(i) {
   data.supplierList.splice(i, 1);
   renderSupplierList();
-  saveData();
+  saveData(false);
 }
 
 function render() {
@@ -191,7 +235,7 @@ function render() {
     let leagueRevenue = 0, leagueCost = 0, leagueProfit = 0;
 
     league.categories.forEach((cat, ci) => {
-      html += `<tr class="cat-row"><td colspan="10"><input style="width:150px;font-weight:700;border:none;background:transparent;font-size:1em;" value="${cat.name}" onchange="data.leagues[${li}].categories[${ci}].name=this.value"> <button class="btn btn-add" style="padding:2px 8px;font-size:0.75em;margin-left:8px;" onclick="addItem(${li},${ci})">+ Item</button> <span style="margin-left:15px;font-size:0.85em;color:#888;">Supplier:</span> <input type="number" step="0.01" style="width:70px;margin-left:5px;" placeholder="S.Price" onchange="applyCatSupplier(${li},${ci},'sPrice',+this.value)"> <input type="number" step="0.01" style="width:70px;margin-left:5px;" placeholder="S.Post" onchange="applyCatSupplier(${li},${ci},'sPost',+this.value)"></td></tr>`;
+      html += `<tr class="cat-row"><td colspan="10"><input style="width:150px;font-weight:700;border:none;background:transparent;font-size:1em;" value="${cat.name}" onchange="data.leagues[${li}].categories[${ci}].name=this.value;saveData(false)"> <button class="btn btn-add" style="padding:2px 8px;font-size:0.75em;margin-left:8px;" onclick="addItem(${li},${ci})">+ Item</button> <span style="margin-left:15px;font-size:0.85em;color:#888;">Supplier:</span> <input type="number" step="0.01" style="width:70px;margin-left:5px;" placeholder="S.Price" onchange="applyCatSupplier(${li},${ci},'sPrice',+this.value)"> <input type="number" step="0.01" style="width:70px;margin-left:5px;" placeholder="S.Post" onchange="applyCatSupplier(${li},${ci},'sPost',+this.value)"></td></tr>`;
       cat.items.forEach((item, ii) => {
         const c = calcItem(item);
         grandRevenue += c.cTotal;
@@ -202,12 +246,12 @@ function render() {
         leagueProfit += c.profit;
         html += `<tr>
           <td><input class="item-input" value="${item.item}" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].item=this.value"></td>
-          <td><input class="qty-input" type="number" value="${item.qty}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].qty=+this.value;render()"></td>
-          <td class="client-col"><input type="number" step="0.01" value="${item.cPrice}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].cPrice=+this.value;render()"></td>
-          <td class="client-col"><input type="number" step="0.01" value="${item.cPost}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].cPost=+this.value;render()"></td>
+          <td><input class="qty-input" type="number" value="${item.qty}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].qty=+this.value;render();saveData(false)"></td>
+          <td class="client-col"><input type="number" step="0.01" value="${item.cPrice}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].cPrice=+this.value;render();saveData(false)"></td>
+          <td class="client-col"><input type="number" step="0.01" value="${item.cPost}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].cPost=+this.value;render();saveData(false)"></td>
           <td class="client-col">${fmt(c.cTotal)}</td>
-          <td class="supplier-col"><input type="number" step="0.01" value="${item.sPrice}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].sPrice=+this.value;render()"></td>
-          <td class="supplier-col"><input type="number" step="0.01" value="${item.sPost}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].sPost=+this.value;render()"></td>
+          <td class="supplier-col"><input type="number" step="0.01" value="${item.sPrice}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].sPrice=+this.value;render();saveData(false)"></td>
+          <td class="supplier-col"><input type="number" step="0.01" value="${item.sPost}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].sPost=+this.value;render();saveData(false)"></td>
           <td class="supplier-col">${fmt(c.sTotal)}</td>
           <td class="profit-col" style="color:${c.profit >= 0 ? '#2e7d32' : '#c62828'}">${fmt(c.profit)}</td>
           <td><button class="btn btn-remove" onclick="removeItem(${li},${ci},${ii})">X</button></td>
@@ -259,16 +303,19 @@ function addItem(li, ci) {
     });
   }
   render();
+  saveData(false);
 }
 
 function removeItem(li, ci, ii) {
   data.leagues[li].categories[ci].items.splice(ii, 1);
   render();
+  saveData(false);
 }
 
 function addCategory(li) {
   data.leagues[li].categories.push({ name: "New Category", items: [] });
   render();
+  saveData(false);
 }
 
 function addLeague() {
@@ -276,6 +323,7 @@ function addLeague() {
   if (name) {
     data.leagues.push({ name, categories: [] });
     render();
+    saveData(false);
   }
 }
 
@@ -283,6 +331,7 @@ function removeLeague(li) {
   if (confirm("Remove league: " + data.leagues[li].name + "?")) {
     data.leagues.splice(li, 1);
     render();
+    saveData(false);
   }
 }
 
@@ -291,7 +340,7 @@ function applyCatSupplier(li, ci, field, value) {
     item[field] = value;
   });
   render();
-  saveData();
+  saveData(false);
 }
 
 function resetSupplier() {
@@ -305,7 +354,7 @@ function resetSupplier() {
       });
     });
     render();
-    saveData();
+    saveData(false);
   }
 }
 
@@ -320,7 +369,7 @@ function resetClient() {
       });
     });
     render();
-    saveData();
+    saveData(false);
   }
 }
 
@@ -328,13 +377,17 @@ function resetAll() {
   if (confirm("Reset SEMUA data ke default? Semua perubahan akan hilang.")) {
     data = JSON.parse(JSON.stringify(defaultData));
     render();
-    saveData();
+    saveData(false);
   }
 }
 
-function saveData() {
-  localStorage.setItem('leagueTracker', JSON.stringify(data));
-  alert("Data saved!");
+async function saveData(showAlert = true) {
+  try {
+    await window.setDoc(window.dataDoc, data);
+    if (showAlert) alert("Data saved to cloud!");
+  } catch (e) {
+    if (showAlert) alert("Save failed: " + e.message);
+  }
 }
 
 function pickLeague(allLabel) {
@@ -514,7 +567,7 @@ function generateQuotationPDF() {
   doc.save(filename);
 }
 
-render();
+loadData();
 </script>
 </body>
 </html>
