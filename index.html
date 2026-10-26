@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OFL League Order Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" onerror="console.warn('jsPDF failed to load')"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js" onerror="console.warn('jsPDF AutoTable failed to load')"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+  h1 { text-align: center; margin-bottom: 20px; color: #1a1a2e; }
+  .league-section { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .league-title { font-size: 1.4em; font-weight: 700; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 3px solid #e94560; color: #e94560; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+  th { background: #e8e8e8; color: #000; padding: 10px 8px; text-align: center; position: sticky; top: 0; font-weight: 700; }
+  td { padding: 6px 8px; text-align: center; border-bottom: 1px solid #eee; }
+  tr:hover { background: #f8f9fa; }
+  .cat-row { background: #f0f0f0; font-weight: 700; }
+  .cat-row td { text-align: left; padding-left: 12px; }
+  input[type="number"] { width: 80px; padding: 6px; border: 1px solid #ddd; border-radius: 6px; text-align: right; font-size: 0.95em; }
+  input[type="number"]:focus { border-color: #e94560; outline: none; box-shadow: 0 0 0 2px rgba(233,69,96,0.15); }
+  .supplier-col { background: #fff8e1; }
+  .client-col { background: #e8f5e9; }
+  .profit-col { background: #e3f2fd; font-weight: 700; }
+  .total-row { font-weight: 700; background: #1a1a2e; color: #fff; }
+  .total-row td { padding: 12px 8px; }
+  .summary-cards { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
+  .card { background: #fff; border-radius: 12px; padding: 20px; flex: 1; min-width: 200px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center; }
+  .card .label { font-size: 0.85em; color: #888; margin-bottom: 5px; }
+  .card .value { font-size: 1.8em; font-weight: 700; }
+  .card.revenue .value { color: #2e7d32; }
+  .card.cost .value { color: #c62828; }
+  .card.profit .value { color: #1565c0; }
+  .btn-bar { text-align: center; margin: 20px 0; }
+  .btn { padding: 10px 24px; border: none; border-radius: 8px; font-size: 1em; cursor: pointer; margin: 0 5px; transition: transform 0.1s; }
+  .btn:hover { transform: scale(1.03); }
+  .btn-primary { background: #e94560; color: #fff; }
+  .btn-secondary { background: #1a1a2e; color: #fff; }
+  .btn-add { background: #2e7d32; color: #f1f1f1; }
+  .btn-remove { background: #c62828; color: #fff; padding: 4px 10px; font-size: 0.8em; border-radius: 4px; }
+  .item-input { width: 140px; }
+  .qty-input { width: 60px; }
+  .add-row-btn { margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<h1>OFL League Order Tracker</h1>
+
+<div class="summary-cards">
+  <div class="card revenue"><div class="label">Total Revenue (Client)</div><div class="value" id="totalRevenue">RM 0</div></div>
+  <div class="card cost"><div class="label">Total Cost (Supplier)</div><div class="value" id="totalCost">RM 0</div></div>
+  <div class="card profit"><div class="label">Total Profit</div><div class="value" id="totalProfit">RM 0</div></div>
+</div>
+
+<div class="league-section">
+  <div class="league-title" style="border-bottom-color:#6a1b9a;color:#6a1b9a;">Supplier Master List <button class="btn btn-add" style="padding:4px 12px;font-size:0.7em;margin-left:10px;" onclick="addSupplierItem()">+ Add Item</button> <button class="btn" style="background:#e65100;color:#fff;padding:4px 12px;font-size:0.7em;margin-left:5px;" onclick="resetSupplier()">Reset Supplier</button></div>
+  <table id="supplierTable">
+    <thead><tr>
+      <th>Item</th><th>Size</th><th>Price (RM)</th><th></th>
+    </tr></thead>
+    <tbody id="supplierBody"></tbody>
+  </table>
+</div>
+
+<div id="leagues"></div>
+
+<div class="btn-bar">
+  <button class="btn btn-add" onclick="addLeague()">+ Add League</button>
+  <button class="btn btn-primary" onclick="saveData()">Save Data</button>
+  <button class="btn btn-secondary" onclick="exportQuotationCSV()">Export Quotation CSV</button>
+  <button class="btn" style="background:#6a1b9a;color:#fff;" onclick="generateQuotationPDF()">Generate Quotation PDF</button>
+  <button class="btn" style="background:#1565c0;color:#fff;" onclick="resetClient()">Reset Order</button>
+  <button class="btn" style="background:#b71c1c;color:#fff;" onclick="resetAll()">Reset All</button>
+</div>
+
+<script>
+const defaultData = {
+  supplierList: [
+    { name: "Medal", size: "", price: 3 },
+    { name: "Trophy Champion", size: "Size A", price: 119 },
+    { name: "Trophy Champion", size: "Size B", price: 109 },
+    { name: "Trophy Champion", size: "Size C", price: 90 },
+    { name: "Top Scorer", size: "Size A", price: 22 },
+    { name: "Best GK", size: "Size B", price: 80 },
+    { name: "Best GK", size: "Size C", price: 70 },
+    { name: "Best GK", size: "Size D", price: 60 },
+    { name: "Mockup", size: "A3", price: 18 },
+    { name: "Mockup", size: "A4", price: 15 },
+    { name: "Trophy Sticker", size: "", price: 2.5 },
+  ],
+  leagues: [
+    {
+      name: "Lakeside",
+      categories: [
+        { name: "Medal", items: [
+          { item: "U8", qty: 45, sPrice: 3, sPost: 0, cPrice: 4.5, cPost: 20 },
+          { item: "U10", qty: 60, sPrice: 3, sPost: 0, cPrice: 4.5, cPost: 20 },
+          { item: "U12", qty: 75, sPrice: 3, sPost: 0, cPrice: 4.5, cPost: 0 },
+          { item: "U14", qty: 90, sPrice: 3, sPost: 0, cPrice: 4.5, cPost: 20 },
+          { item: "U16", qty: 90, sPrice: 3, sPost: 0, cPrice: 4.5, cPost: 0 },
+          { item: "Girls league", qty: 60, sPrice: 3, sPost: 0, cPrice: 4.5, cPost: 0 },
+        ]},
+        { name: "Trophy", items: [
+          { item: "Piala U8-U12", qty: 3, sPrice: 119, sPost: 0, cPrice: 85, cPost: 15 },
+          { item: "Piala U14-U16", qty: 2, sPrice: 109, sPost: 0, cPrice: 119, cPost: 15 },
+          { item: "Top Scorer U8-U1", qty: 5, sPrice: 22, sPost: 0, cPrice: 22, cPost: 7 },
+          { item: "Best GK U8-U12", qty: 3, sPrice: 80, sPost: 0, cPrice: 66, cPost: 10 },
+          { item: "Best GK U14-U16", qty: 2, sPrice: 70, sPost: 0, cPrice: 70, cPost: 0 },
+          { item: "Piala Girls", qty: 1, sPrice: 90, sPost: 0, cPrice: 119, cPost: 10 },
+          { item: "Top Scorer girl", qty: 1, sPrice: 22, sPost: 0, cPrice: 22, cPost: 0 },
+          { item: "Best GK girls", qty: 1, sPrice: 70, sPost: 0, cPrice: 70, cPost: 0 },
+        ]},
+        { name: "Mockup", items: [
+          { item: "U8-16", qty: 15, sPrice: 18, sPost: 0, cPrice: 18, cPost: 20 },
+          { item: "Girls league", qty: 3, sPrice: 15, sPost: 0, cPrice: 18, cPost: 10 },
+        ]},
+        { name: "Sticker", items: [
+          { item: "Sticker", qty: 15, sPrice: 2.5, sPost: 0, cPrice: 2.5, cPost: 0 },
+        ]},
+      ]
+    }
+  ]
+};
+
+let data;
+try {
+  const stored = localStorage.getItem('leagueTracker');
+  data = stored ? JSON.parse(stored) : null;
+  if (!data || !data.leagues || !data.supplierList) data = null;
+} catch (e) {
+  console.warn('localStorage data corrupted, using default');
+  data = null;
+}
+data = data || JSON.parse(JSON.stringify(defaultData));
+
+function fmt(n) { return 'RM ' + n.toFixed(2); }
+
+function calcItem(item) {
+  const sTotal = (item.sPrice * item.qty) + item.sPost;
+  const cTotal = (item.cPrice * item.qty) + item.cPost;
+  return { sTotal, cTotal, profit: cTotal - sTotal };
+}
+
+function renderSupplierList() {
+  const tbody = document.getElementById('supplierBody');
+  tbody.innerHTML = '';
+  data.supplierList.forEach((item, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input style="width:140px;" value="${item.name}" onchange="data.supplierList[${i}].name=this.value;saveData()"></td>
+      <td><input style="width:80px;" value="${item.size}" onchange="data.supplierList[${i}].size=this.value;saveData()"></td>
+      <td><input type="number" step="0.01" style="width:80px;" value="${item.price}" onchange="data.supplierList[${i}].price=+this.value;saveData()"></td>
+      <td><button class="btn btn-remove" onclick="removeSupplierItem(${i})">X</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function addSupplierItem() {
+  data.supplierList.push({ name: "", size: "", price: 0 });
+  renderSupplierList();
+  saveData();
+}
+
+function removeSupplierItem(i) {
+  data.supplierList.splice(i, 1);
+  renderSupplierList();
+  saveData();
+}
+
+function render() {
+  renderSupplierList();
+  const container = document.getElementById('leagues');
+  container.innerHTML = '';
+  let grandRevenue = 0, grandCost = 0, grandProfit = 0;
+
+  data.leagues.forEach((league, li) => {
+    const section = document.createElement('div');
+    section.className = 'league-section';
+
+    let html = `<div class="league-title">${league.name} <button class="btn btn-remove" onclick="removeLeague(${li})" style="float:right;margin-top:2px;">Remove</button></div>`;
+    html += `<table><thead><tr>
+      <th>Item</th><th>Qty</th>
+      <th class="client-col">Price</th><th class="client-col">Postage</th><th class="client-col">Total Price</th>
+      <th class="supplier-col">S.Price</th><th class="supplier-col">S.Post</th><th class="supplier-col">S.Total</th>
+      <th class="profit-col">Profit</th><th></th>
+    </tr></thead><tbody>`;
+
+    let leagueRevenue = 0, leagueCost = 0, leagueProfit = 0;
+
+    league.categories.forEach((cat, ci) => {
+      html += `<tr class="cat-row"><td colspan="10"><input style="width:150px;font-weight:700;border:none;background:transparent;font-size:1em;" value="${cat.name}" onchange="data.leagues[${li}].categories[${ci}].name=this.value"> <button class="btn btn-add" style="padding:2px 8px;font-size:0.75em;margin-left:8px;" onclick="addItem(${li},${ci})">+ Item</button> <span style="margin-left:15px;font-size:0.85em;color:#888;">Supplier:</span> <input type="number" step="0.01" style="width:70px;margin-left:5px;" placeholder="S.Price" onchange="applyCatSupplier(${li},${ci},'sPrice',+this.value)"> <input type="number" step="0.01" style="width:70px;margin-left:5px;" placeholder="S.Post" onchange="applyCatSupplier(${li},${ci},'sPost',+this.value)"></td></tr>`;
+      cat.items.forEach((item, ii) => {
+        const c = calcItem(item);
+        grandRevenue += c.cTotal;
+        grandCost += c.sTotal;
+        grandProfit += c.profit;
+        leagueRevenue += c.cTotal;
+        leagueCost += c.sTotal;
+        leagueProfit += c.profit;
+        html += `<tr>
+          <td><input class="item-input" value="${item.item}" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].item=this.value"></td>
+          <td><input class="qty-input" type="number" value="${item.qty}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].qty=+this.value;render()"></td>
+          <td class="client-col"><input type="number" step="0.01" value="${item.cPrice}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].cPrice=+this.value;render()"></td>
+          <td class="client-col"><input type="number" step="0.01" value="${item.cPost}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].cPost=+this.value;render()"></td>
+          <td class="client-col">${fmt(c.cTotal)}</td>
+          <td class="supplier-col"><input type="number" step="0.01" value="${item.sPrice}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].sPrice=+this.value;render()"></td>
+          <td class="supplier-col"><input type="number" step="0.01" value="${item.sPost}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].sPost=+this.value;render()"></td>
+          <td class="supplier-col">${fmt(c.sTotal)}</td>
+          <td class="profit-col" style="color:${c.profit >= 0 ? '#2e7d32' : '#c62828'}">${fmt(c.profit)}</td>
+          <td><button class="btn btn-remove" onclick="removeItem(${li},${ci},${ii})">X</button></td>
+        </tr>`;
+      });
+    });
+
+    html += `</tbody><tfoot><tr class="total-row">
+      <td colspan="4" style="text-align:right;font-size:1.1em;color:#e94560;">Total</td>
+      <td class="client-col" style="font-size:1.1em;color:#e94560;">${fmt(leagueRevenue)}</td>
+      <td class="supplier-col" colspan="2"></td>
+      <td class="supplier-col" style="font-size:1.1em;color:#e94560;">${fmt(leagueCost)}</td>
+      <td class="profit-col" style="font-size:1.1em;color:#e94560;">${fmt(leagueProfit)}</td>
+      <td></td>
+    </tr></tfoot></table>`;
+    html += `<button class="btn btn-add add-row-btn" onclick="addCategory(${li})">+ Add Category</button>`;
+    section.innerHTML = html;
+    container.appendChild(section);
+  });
+
+  document.getElementById('totalRevenue').textContent = fmt(grandRevenue);
+  document.getElementById('totalCost').textContent = fmt(grandCost);
+  document.getElementById('totalProfit').textContent = fmt(grandProfit);
+}
+
+function addItem(li, ci) {
+  const supplierOptions = data.supplierList.map((s, i) => `${i + 1}. ${s.name}${s.size ? ' - ' + s.size : ''} (RM ${s.price})`).join('\n');
+  const choice = prompt(`Select supplier item:\n${supplierOptions}\n\nEnter number (1-${data.supplierList.length}) or 0 for custom:`);
+  const choiceNum = parseInt(choice);
+
+  if (isNaN(choiceNum) || choiceNum < 0 || choiceNum > data.supplierList.length) {
+    alert("Invalid selection!");
+    return;
+  }
+
+  if (choiceNum === 0) {
+    // Custom item
+    data.leagues[li].categories[ci].items.push({ item: "", qty: 1, sPrice: 0, sPost: 0, cPrice: 0, cPost: 0 });
+  } else {
+    // Select from supplier list
+    const selected = data.supplierList[choiceNum - 1];
+    data.leagues[li].categories[ci].items.push({
+      item: `${selected.name}${selected.size ? ' ' + selected.size : ''}`,
+      qty: 1,
+      sPrice: selected.price,
+      sPost: 0,
+      cPrice: 0,
+      cPost: 0
+    });
+  }
+  render();
+}
+
+function removeItem(li, ci, ii) {
+  data.leagues[li].categories[ci].items.splice(ii, 1);
+  render();
+}
+
+function addCategory(li) {
+  data.leagues[li].categories.push({ name: "New Category", items: [] });
+  render();
+}
+
+function addLeague() {
+  const name = prompt("League name:");
+  if (name) {
+    data.leagues.push({ name, categories: [] });
+    render();
+  }
+}
+
+function removeLeague(li) {
+  if (confirm("Remove league: " + data.leagues[li].name + "?")) {
+    data.leagues.splice(li, 1);
+    render();
+  }
+}
+
+function applyCatSupplier(li, ci, field, value) {
+  data.leagues[li].categories[ci].items.forEach(item => {
+    item[field] = value;
+  });
+  render();
+  saveData();
+}
+
+function resetSupplier() {
+  if (confirm("Reset semua Supplier Price & Postage ke 0? Client price kekal.")) {
+    data.leagues.forEach(league => {
+      league.categories.forEach(cat => {
+        cat.items.forEach(item => {
+          item.sPrice = 0;
+          item.sPost = 0;
+        });
+      });
+    });
+    render();
+    saveData();
+  }
+}
+
+function resetClient() {
+  if (confirm("Reset semua Client Price & Postage ke 0? Supplier price kekal.")) {
+    data.leagues.forEach(league => {
+      league.categories.forEach(cat => {
+        cat.items.forEach(item => {
+          item.cPrice = 0;
+          item.cPost = 0;
+        });
+      });
+    });
+    render();
+    saveData();
+  }
+}
+
+function resetAll() {
+  if (confirm("Reset SEMUA data ke default? Semua perubahan akan hilang.")) {
+    data = JSON.parse(JSON.stringify(defaultData));
+    render();
+    saveData();
+  }
+}
+
+function saveData() {
+  localStorage.setItem('leagueTracker', JSON.stringify(data));
+  alert("Data saved!");
+}
+
+function pickLeague(allLabel) {
+  const opts = data.leagues.map((l, i) => `${i + 1}. ${l.name}`).join('\n');
+  const choice = prompt(`Pilih Quotation:\n${opts}\n\n0 = ${allLabel}\n\nMasukkan number (0-${data.leagues.length}):`);
+  const n = parseInt(choice);
+  if (isNaN(n) || n < 0 || n > data.leagues.length) return null;
+  return n === 0 ? 'all' : n - 1;
+}
+
+function exportQuotationCSV() {
+  const pick = pickLeague("Export semua Quotation");
+  if (pick === null) return;
+
+  let csv = "League,Category,Item,Qty,Price,Postage,Total\n";
+  let grandTotal = 0;
+
+  const leagues = pick === 'all' ? data.leagues : [data.leagues[pick]];
+  leagues.forEach(league => {
+    let leagueTotal = 0;
+    league.categories.forEach(cat => {
+      cat.items.forEach(item => {
+        const cTotal = (item.cPrice * item.qty) + item.cPost;
+        csv += `${league.name},${cat.name},${item.item},${item.qty},${item.cPrice},${item.cPost},${cTotal.toFixed(2)}\n`;
+        leagueTotal += cTotal;
+        grandTotal += cTotal;
+      });
+    });
+    if (pick === 'all') {
+      csv += `${league.name} TOTAL,,,,,${leagueTotal.toFixed(2)}\n`;
+    }
+  });
+
+  if (pick === 'all') {
+    csv += `GRAND TOTAL,,,,,${grandTotal.toFixed(2)}\n`;
+  }
+
+  const filename = pick === 'all' ? 'league-order-client-all.csv' : `league-order-client-${leagues[0].name}.csv`;
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+function generateQuotationPDF() {
+  if (!window.jspdf) {
+    alert("jsPDF library not loaded! Check internet connection and refresh page.");
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  if (data.leagues.length === 0) {
+    alert("No leagues available!");
+    return;
+  }
+
+  const pick = pickLeague("Generate semua Quotation");
+  if (pick === null) return;
+
+  const clientName = prompt("Client name:");
+  if (!clientName) return;
+
+  const quoteDate = new Date().toLocaleDateString('en-GB');
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const quoteKey = 'quoteCounter_' + today;
+  let counter = parseInt(localStorage.getItem(quoteKey) || '0') + 1;
+  localStorage.setItem(quoteKey, counter.toString());
+  const quoteNo = `QT-${today}-${counter.toString().padStart(3, '0')}`;
+
+  const leagues = pick === 'all' ? data.leagues : [data.leagues[pick]];
+  let grandTotal = 0;
+  let startY = 20;
+
+  leagues.forEach((league, idx) => {
+    if (pick === 'all' && idx > 0) {
+      doc.addPage();
+      startY = 20;
+    }
+
+    doc.setFontSize(18);
+    doc.setTextColor(26, 26, 46);
+    doc.text(league.name.toUpperCase(), 105, startY, { align: 'center' });
+
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(`Quote No: ${quoteNo}`, 14, startY + 8);
+    doc.text(`Date: ${quoteDate}`, 14, startY + 13);
+    doc.text(`To: ${clientName}`, 14, startY + 18);
+
+    let leagueItems = [];
+    let leagueTotal = 0;
+
+    league.categories.forEach(cat => {
+      cat.items.forEach(item => {
+        const cTotal = (item.cPrice * item.qty) + item.cPost;
+        leagueTotal += cTotal;
+        grandTotal += cTotal;
+        leagueItems.push([
+          cat.name,
+          item.item,
+          item.qty,
+          `RM ${item.cPrice.toFixed(2)}`,
+          `RM ${item.cPost.toFixed(2)}`,
+          `RM ${cTotal.toFixed(2)}`
+        ]);
+      });
+    });
+
+    if (pick === 'all') {
+      leagueItems.push(['', '', '', '', 'TOTAL:', `RM ${leagueTotal.toFixed(2)}`]);
+    }
+
+    doc.autoTable({
+      startY: startY + 25,
+      head: [['Category', 'Item', 'Qty', 'Unit Price', 'Postage', 'Total']],
+      body: leagueItems,
+      theme: 'grid',
+      headStyles: { fillColor: [26, 26, 46], textColor: 255, fontStyle: 'bold' },
+      styles: { fontSize: 9, cellPadding: 3 },
+      columnStyles: {
+        0: { cellWidth: 35 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 15, halign: 'center' },
+        3: { cellWidth: 25, halign: 'right' },
+        4: { cellWidth: 25, halign: 'right' },
+        5: { cellWidth: 30, halign: 'right' }
+      }
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 10;
+
+    if (pick === 'all') {
+      doc.setFontSize(11);
+      doc.setTextColor(26, 26, 46);
+      doc.text(`Subtotal:`, 140, finalY, { align: 'right' });
+      doc.text(`RM ${leagueTotal.toFixed(2)}`, 195, finalY, { align: 'right' });
+    } else {
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+      doc.text(`TOTAL:`, 140, finalY, { align: 'right' });
+      doc.text(`RM ${leagueTotal.toFixed(2)}`, 195, finalY, { align: 'right' });
+    }
+
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(100);
+    doc.text('Payment Method:', 14, finalY + 25);
+    doc.text('Bank: _______________', 14, finalY + 31);
+    doc.text('Account No: _______________', 14, finalY + 37);
+    doc.text('Account Name: _______________', 14, finalY + 43);
+  });
+
+  if (pick === 'all') {
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.setTextColor(26, 26, 46);
+    doc.text('GRAND TOTAL', 105, 30, { align: 'center' });
+
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text(`TOTAL:`, 140, 50, { align: 'right' });
+    doc.text(`RM ${grandTotal.toFixed(2)}`, 195, 50, { align: 'right' });
+
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(100);
+    doc.text('Payment Method:', 14, 70);
+    doc.text('Bank: _______________', 14, 76);
+    doc.text('Account No: _______________', 14, 82);
+    doc.text('Account Name: _______________', 14, 88);
+  }
+
+  const filename = pick === 'all' ? `quotation-all-${quoteNo}.pdf` : `quotation-${leagues[0].name}-${quoteNo}.pdf`;
+  doc.save(filename);
+}
+
+render();
+</script>
+</body>
+</html>
