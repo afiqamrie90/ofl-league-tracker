@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- OFL League Order Tracker v2.0 - Firebase Firestore Integration -->
+<!-- OFL League Order Tracker v2.1 - Mobile Responsive Complete -->
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
@@ -59,12 +59,31 @@
   .item-input { width: 140px; }
   .qty-input { width: 60px; }
   .add-row-btn { margin-top: 10px; }
+  
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    body { padding: 10px; }
+    h1 { font-size: 1.5em; }
+    .summary-cards { flex-direction: column; }
+    .card { min-width: 100%; }
+    .card .value { font-size: 1.4em; }
+    .league-section { padding: 10px; }
+    table { font-size: 0.75em; }
+    th, td { padding: 4px 3px; }
+    input[type="number"] { width: 50px; padding: 4px; font-size: 0.9em; }
+    .item-input { width: 80px; }
+    .qty-input { width: 40px; }
+    .btn { padding: 8px 12px; font-size: 0.85em; margin: 3px; }
+    .btn-bar { display: flex; flex-wrap: wrap; justify-content: center; }
+    .league-title { font-size: 1.1em; }
+    .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  }
 </style>
 </head>
 <body>
 
 <h1>OFL League Order Tracker</h1>
-<div style="text-align:center;color:#888;font-size:0.85em;margin-top:-15px;margin-bottom:20px;">v2.0 - Firebase Cloud Sync</div>
+<div style="text-align:center;color:#888;font-size:0.85em;margin-top:-15px;margin-bottom:20px;">v2.1 - Mobile Responsive</div>
 
 <div class="summary-cards">
   <div class="card revenue"><div class="label">Total Revenue (Client)</div><div class="value" id="totalRevenue">RM 0</div></div>
@@ -74,12 +93,12 @@
 
 <div class="league-section">
   <div class="league-title" style="border-bottom-color:#6a1b9a;color:#6a1b9a;">Supplier Master List <button class="btn btn-add" style="padding:4px 12px;font-size:0.7em;margin-left:10px;" onclick="addSupplierItem()">+ Add Item</button> <button class="btn" style="background:#e65100;color:#fff;padding:4px 12px;font-size:0.7em;margin-left:5px;" onclick="resetSupplier()">Reset Supplier</button></div>
-  <table id="supplierTable">
+  <div class="table-container"><table id="supplierTable">
     <thead><tr>
       <th>Item</th><th>Size</th><th>Price (RM)</th><th></th>
     </tr></thead>
     <tbody id="supplierBody"></tbody>
-  </table>
+  </table></div>
 </div>
 
 <div id="leagues"></div>
@@ -220,7 +239,7 @@ function render() {
     section.className = 'league-section';
 
     let html = `<div class="league-title">${league.name} <button class="btn btn-remove" onclick="removeLeague(${li})" style="float:right;margin-top:2px;">Remove</button></div>`;
-    html += `<table><thead><tr>
+    html += `<div class="table-container"><table><thead><tr>
       <th>Item</th><th>Qty</th>
       <th class="client-col">Price</th><th class="client-col">Postage</th><th class="client-col">Total Price</th>
       <th class="supplier-col">S.Price</th><th class="supplier-col">S.Post</th><th class="supplier-col">S.Total</th>
@@ -261,7 +280,7 @@ function render() {
       <td class="supplier-col" style="font-size:1.1em;color:#e94560;">${fmt(leagueCost)}</td>
       <td class="profit-col" style="font-size:1.1em;color:#e94560;">${fmt(leagueProfit)}</td>
       <td></td>
-    </tr></tfoot></table>`;
+    </tr></tfoot></table></div>`;
     html += `<button class="btn btn-add add-row-btn" onclick="addCategory(${li})">+ Add Category</button>`;
     section.innerHTML = html;
     container.appendChild(section);
