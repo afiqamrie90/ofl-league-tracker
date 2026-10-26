@@ -4,10 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OFL League Order Tracker</title>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
-  import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
-
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
   const firebaseConfig = {
     apiKey: "AIzaSyBHnS8LDfEpB68cktxMhwCNUuBcI8VXtaQ",
     authDomain: "ofl-league-tracker.firebaseapp.com",
@@ -17,15 +16,9 @@
     appId: "1:854506865712:web:b3a2139620a57e91bb19f5"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const dataDoc = doc(db, "tracker", "leagueData");
-
-  window.db = db;
-  window.dataDoc = dataDoc;
-  window.getDoc = getDoc;
-  window.setDoc = setDoc;
-  window.onSnapshot = onSnapshot;
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const dataDoc = db.collection("tracker").doc("leagueData");
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" onerror="console.warn('jsPDF failed to load')"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js" onerror="console.warn('jsPDF AutoTable failed to load')"></script>
@@ -152,8 +145,8 @@ let dataLoaded = false;
 
 async function loadData() {
   try {
-    const docSnap = await window.getDoc(window.dataDoc);
-    if (docSnap.exists()) {
+    const docSnap = await dataDoc.get();
+    if (docSnap.exists) {
       data = docSnap.data();
       if (!data || !data.leagues || !data.supplierList) data = null;
     }
@@ -168,8 +161,8 @@ async function loadData() {
 }
 
 function setupRealtimeSync() {
-  window.onSnapshot(window.dataDoc, (docSnap) => {
-    if (docSnap.exists()) {
+  dataDoc.onSnapshot((docSnap) => {
+    if (docSnap.exists) {
       const remoteData = docSnap.data();
       if (remoteData && remoteData.leagues && remoteData.supplierList) {
         data = remoteData;
@@ -383,7 +376,7 @@ function resetAll() {
 
 async function saveData(showAlert = true) {
   try {
-    await window.setDoc(window.dataDoc, data);
+    await dataDoc.set(data);
     if (showAlert) alert("Data saved to cloud!");
   } catch (e) {
     if (showAlert) alert("Save failed: " + e.message);
