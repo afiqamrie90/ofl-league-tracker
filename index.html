@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- OFL League Order Tracker v2.5 - Item Code (Remark) -->
+<!-- OFL League Order Tracker v2.6 - Clone Button Size Fix -->
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
@@ -85,7 +85,7 @@
 <body>
 
 <h1>OFL League Order Tracker</h1>
-<div style="text-align:center;color:#888;font-size:0.85em;margin-top:-15px;margin-bottom:20px;">v2.5 - Item Code (Remark)</div>
+<div style="text-align:center;color:#888;font-size:0.85em;margin-top:-15px;margin-bottom:20px;">v2.6</div>
 
 <div class="summary-cards">
   <div class="card revenue"><div class="label">Total Revenue (Client)</div><div class="value" id="totalRevenue">RM 0</div></div>
@@ -255,7 +255,7 @@ function render() {
     const section = document.createElement('div');
     section.className = 'league-section';
 
-    let html = `<div class="league-title">${league.name} <button class="btn btn-remove" onclick="removeLeague(${li})" style="float:right;margin-top:2px;">Remove</button> <button class="btn" style="background:#1565c0;color:#fff;float:right;margin-top:2px;margin-right:5px;" onclick="cloneLeague(${li})">Clone</button></div>`;
+    let html = `<div class="league-title">${league.name} <button class="btn btn-remove" onclick="removeLeague(${li})" style="float:right;margin-top:2px;">Remove</button> <button class="btn" style="background:#1565c0;color:#fff;padding:4px 10px;font-size:0.8em;border-radius:4px;float:right;margin-top:2px;margin-right:5px;" onclick="cloneLeague(${li})">Clone</button></div>`;
     html += `<div class="table-container"><table><thead><tr>
       <th>Item</th><th>Qty</th>
       <th class="client-col">Price</th><th class="client-col">Postage</th><th class="client-col">Total Price</th>
