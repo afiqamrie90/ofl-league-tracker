@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- OFL League Order Tracker v2.9 - Visible Code Column -->
+<!-- OFL League Order Tracker v3.0 - Purchase Summary with Item+Size -->
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
@@ -59,7 +59,6 @@
   .btn-add { background: #2e7d32; color: #f1f1f1; }
   .btn-remove { background: #c62828; color: #fff; padding: 4px 10px; font-size: 0.8em; border-radius: 4px; }
   .item-input { width: 140px; }
-  .code-input { width: 110px; }
   .qty-input { width: 60px; }
   .add-row-btn { margin-top: 10px; }
   
@@ -75,7 +74,6 @@
     th, td { padding: 4px 3px; }
     input[type="number"] { width: 50px; padding: 4px; font-size: 0.9em; }
     .item-input { width: 80px; }
-    .code-input { width: 60px; }
     .qty-input { width: 40px; }
     .btn { padding: 8px 12px; font-size: 0.85em; margin: 3px; }
     .btn-bar { display: flex; flex-wrap: wrap; justify-content: center; }
@@ -87,7 +85,7 @@
 <body>
 
 <h1>OFL League Order Tracker</h1>
-<div style="text-align:center;color:#888;font-size:0.85em;margin-top:-15px;margin-bottom:20px;">v2.9</div>
+<div style="text-align:center;color:#888;font-size:0.85em;margin-top:-15px;margin-bottom:20px;">v3.0</div>
 
 <div class="summary-cards">
   <div class="card revenue"><div class="label">Total Revenue (Client)</div><div class="value" id="totalRevenue">RM 0</div></div>
@@ -258,7 +256,7 @@ function render() {
 
     let html = `<div class="league-title">${league.name} <button class="btn btn-remove" onclick="removeLeague(${li})" style="float:right;margin-top:2px;">Remove</button> <button class="btn" style="background:#1565c0;color:#fff;padding:4px 10px;font-size:0.8em;border-radius:4px;float:right;margin-top:2px;margin-right:5px;" onclick="cloneLeague(${li})">Clone</button></div>`;
     html += `<div class="table-container"><table><thead><tr>
-      <th>Item</th><th>Code</th><th>Qty</th>
+      <th>Item</th><th>Qty</th>
       <th class="client-col">Price</th><th class="client-col">Postage</th><th class="client-col">Total Price</th>
       <th class="supplier-col">S.Price</th><th class="supplier-col">S.Post</th><th class="supplier-col">S.Total</th>
       <th class="profit-col">Profit</th><th></th>
@@ -267,7 +265,7 @@ function render() {
     let leagueRevenue = 0, leagueCost = 0, leagueProfit = 0;
 
     league.categories.forEach((cat, ci) => {
-      html += `<tr class="cat-row"><td colspan="11"><input style="width:150px;font-weight:700;border:none;background:transparent;font-size:1em;" value="${cat.name}" onchange="data.leagues[${li}].categories[${ci}].name=this.value;saveData(false)"> <button class="btn btn-add" style="padding:2px 8px;font-size:0.75em;margin-left:8px;" onclick="addItem(${li},${ci})">+ Item</button> <span style="margin-left:15px;font-size:0.85em;color:#888;">Supplier:</span> <input type="number" step="0.01" style="width:70px;margin-left:5px;" placeholder="S.Price" onchange="applyCatSupplier(${li},${ci},'sPrice',+this.value)"> <input type="number" step="0.01" style="width:70px;margin-left:5px;" placeholder="S.Post" onchange="applyCatSupplier(${li},${ci},'sPost',+this.value)"></td></tr>`;
+      html += `<tr class="cat-row"><td colspan="10"><input style="width:150px;font-weight:700;border:none;background:transparent;font-size:1em;" value="${cat.name}" onchange="data.leagues[${li}].categories[${ci}].name=this.value;saveData(false)"> <button class="btn btn-add" style="padding:2px 8px;font-size:0.75em;margin-left:8px;" onclick="addItem(${li},${ci})">+ Item</button> <span style="margin-left:15px;font-size:0.85em;color:#888;">Supplier:</span> <input type="number" step="0.01" style="width:70px;margin-left:5px;" placeholder="S.Price" onchange="applyCatSupplier(${li},${ci},'sPrice',+this.value)"> <input type="number" step="0.01" style="width:70px;margin-left:5px;" placeholder="S.Post" onchange="applyCatSupplier(${li},${ci},'sPost',+this.value)"></td></tr>`;
       cat.items.forEach((item, ii) => {
         const c = calcItem(item);
         grandRevenue += c.cTotal;
@@ -278,7 +276,6 @@ function render() {
         leagueProfit += c.profit;
         html += `<tr>
           <td><input class="item-input" value="${item.item}" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].item=this.value"></td>
-          <td><input class="code-input" value="${item.code || ''}" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].code=this.value.trim();render();saveData(false)"></td>
           <td><input class="qty-input" type="number" value="${item.qty}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].qty=+this.value;render();saveData(false)"></td>
           <td class="client-col"><input type="number" step="0.01" value="${item.cPrice}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].cPrice=+this.value;render();saveData(false)"></td>
           <td class="client-col"><input type="number" step="0.01" value="${item.cPost}" min="0" onchange="data.leagues[${li}].categories[${ci}].items[${ii}].cPost=+this.value;render();saveData(false)"></td>
@@ -291,11 +288,11 @@ function render() {
         </tr>`;
       });
       const catTotalQty = cat.items.reduce((sum, it) => sum + (+it.qty || 0), 0);
-      html += `<tr class="cat-total"><td style="text-align:right;">Total Qty:</td><td>${catTotalQty}</td><td colspan="9"></td></tr>`;
+      html += `<tr class="cat-total"><td style="text-align:right;">Total Qty:</td><td>${catTotalQty}</td><td colspan="8"></td></tr>`;
     });
 
     html += `</tbody><tfoot><tr class="total-row">
-      <td colspan="5" style="text-align:right;font-size:1.1em;color:#e94560;">Total</td>
+      <td colspan="4" style="text-align:right;font-size:1.1em;color:#e94560;">Total</td>
       <td class="client-col" style="font-size:1.1em;color:#e94560;">${fmt(leagueRevenue)}</td>
       <td class="supplier-col" colspan="2"></td>
       <td class="supplier-col" style="font-size:1.1em;color:#e94560;">${fmt(leagueCost)}</td>
@@ -314,6 +311,10 @@ function render() {
 }
 
 function renderPurchaseSummary() {
+  const supplierByCode = {};
+  data.supplierList.forEach(s => {
+    if (s.remark) supplierByCode[s.remark.trim()] = s;
+  });
   const agg = {};
   let hasData = false;
   data.leagues.forEach(league => {
@@ -330,15 +331,16 @@ function renderPurchaseSummary() {
   const container = document.getElementById('purchaseSummary');
   if (!hasData) { section.style.display = 'none'; return; }
   section.style.display = '';
-  let html = '<div class="table-container"><table><thead><tr><th style="width:25%;">Category</th><th>Code</th><th style="width:15%;">Total Qty</th></tr></thead><tbody>';
+  let html = '<div class="table-container"><table><thead><tr><th style="width:15%;">Category</th><th style="width:22%;">Code</th><th>Item</th><th style="width:15%;">Size</th><th style="width:12%;">Total Qty</th></tr></thead><tbody>';
   Object.keys(agg).forEach(catName => {
     const items = Object.entries(agg[catName]);
     let catQty = 0;
-    items.forEach(([name, qty], idx) => {
+    items.forEach(([code, qty], idx) => {
       catQty += qty;
-      html += `<tr><td style="font-weight:700;">${idx === 0 ? catName : ''}</td><td style="text-align:left;padding-left:12px;">${name}</td><td><strong>${qty}</strong></td></tr>`;
+      const sup = supplierByCode[code];
+      html += `<tr><td style="font-weight:700;">${idx === 0 ? catName : ''}</td><td>${code}</td><td style="text-align:left;padding-left:12px;">${sup ? sup.name : '<span style="color:#c62828;">- tak jumpa -</span>'}</td><td>${sup ? (sup.size || '-') : '-'}</td><td><strong>${qty}</strong></td></tr>`;
     });
-    html += `<tr class="cat-total"><td colspan="2" style="text-align:right;">Total ${catName}:</td><td>${catQty}</td></tr>`;
+    html += `<tr class="cat-total"><td colspan="4" style="text-align:right;">Total ${catName}:</td><td>${catQty}</td></tr>`;
   });
   html += '</tbody></table></div>';
   container.innerHTML = html;
