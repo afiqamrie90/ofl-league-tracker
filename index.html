@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- OFL League Order Tracker v2.7 - Remove Reset All -->
+<!-- OFL League Order Tracker v2.8 - Button Bar Below Master List -->
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
@@ -85,7 +85,7 @@
 <body>
 
 <h1>OFL League Order Tracker</h1>
-<div style="text-align:center;color:#888;font-size:0.85em;margin-top:-15px;margin-bottom:20px;">v2.7</div>
+<div style="text-align:center;color:#888;font-size:0.85em;margin-top:-15px;margin-bottom:20px;">v2.8</div>
 
 <div class="summary-cards">
   <div class="card revenue"><div class="label">Total Revenue (Client)</div><div class="value" id="totalRevenue">RM 0</div></div>
@@ -103,19 +103,19 @@
   </table></div>
 </div>
 
-<div id="leagues"></div>
-
-<div class="league-section" id="purchaseSummarySection" style="display:none;">
-  <div class="league-title" style="border-bottom-color:#1565c0;color:#1565c0;">Purchase Summary (Semua Liga)</div>
-  <div id="purchaseSummary"></div>
-</div>
-
 <div class="btn-bar">
   <button class="btn btn-add" onclick="addLeague()">+ Add League</button>
   <button class="btn btn-primary" onclick="saveData()">Save Data</button>
   <button class="btn btn-secondary" onclick="exportQuotationCSV()">Export Quotation CSV</button>
   <button class="btn" style="background:#6a1b9a;color:#fff;" onclick="generateQuotationPDF()">Generate Quotation PDF</button>
   <button class="btn" style="background:#1565c0;color:#fff;" onclick="resetClient()">Reset Order</button>
+</div>
+
+<div id="leagues"></div>
+
+<div class="league-section" id="purchaseSummarySection" style="display:none;">
+  <div class="league-title" style="border-bottom-color:#1565c0;color:#1565c0;">Purchase Summary (All Leagues)</div>
+  <div id="purchaseSummary"></div>
 </div>
 
 <script>
@@ -125,7 +125,7 @@ const defaultData = {
     { name: "Trophy Champion", size: "Size A", price: 135, remark: "Trophy Open" },
     { name: "Trophy Champion", size: "Size B", price: 115, remark: "Trophy U14-U16" },
     { name: "Trophy Champion", size: "Size C", price: 80, remark: "Piala U8-U12" },
-    { name: "Top Scorer", size: "Size B", price: 18, remark: "Top scorer B" },
+    { name: "Top Scorer", size: "Size B", price: 16, remark: "Top scorer B" },
     { name: "Top Scorer", size: "Size C", price: 15, remark: "Top scorer C" },
     { name: "Best GK", size: "Size B", price: 70, remark: "Best GK Open" },
     { name: "Best GK", size: "Size C", price: 66, remark: "Best GK U14-U16" },
