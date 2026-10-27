@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- OFL League Order Tracker v2.6 - Clone Button Size Fix -->
+<!-- OFL League Order Tracker v2.7 - Remove Reset All -->
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
@@ -85,7 +85,7 @@
 <body>
 
 <h1>OFL League Order Tracker</h1>
-<div style="text-align:center;color:#888;font-size:0.85em;margin-top:-15px;margin-bottom:20px;">v2.6</div>
+<div style="text-align:center;color:#888;font-size:0.85em;margin-top:-15px;margin-bottom:20px;">v2.7</div>
 
 <div class="summary-cards">
   <div class="card revenue"><div class="label">Total Revenue (Client)</div><div class="value" id="totalRevenue">RM 0</div></div>
@@ -116,7 +116,6 @@
   <button class="btn btn-secondary" onclick="exportQuotationCSV()">Export Quotation CSV</button>
   <button class="btn" style="background:#6a1b9a;color:#fff;" onclick="generateQuotationPDF()">Generate Quotation PDF</button>
   <button class="btn" style="background:#1565c0;color:#fff;" onclick="resetClient()">Reset Order</button>
-  <button class="btn" style="background:#b71c1c;color:#fff;" onclick="resetAll()">Reset All</button>
 </div>
 
 <script>
@@ -445,14 +444,6 @@ function resetClient() {
         });
       });
     });
-    render();
-    saveData(false);
-  }
-}
-
-function resetAll() {
-  if (confirm("Reset SEMUA data ke default? Semua perubahan akan hilang.")) {
-    data = JSON.parse(JSON.stringify(defaultData));
     render();
     saveData(false);
   }
