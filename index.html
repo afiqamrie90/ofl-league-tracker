@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- OFL League Order Tracker v3.3 - Grand Total Text Readability -->
+<!-- OFL League Order Tracker v3.4 - Remove Payment Method from PDF -->
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
@@ -615,14 +615,6 @@ function generateQuotationPDF() {
       doc.text(`TOTAL:`, 140, finalY, { align: 'right' });
       doc.text(`RM ${leagueTotal.toFixed(2)}`, 195, finalY, { align: 'right' });
     }
-
-    doc.setFontSize(9);
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(100);
-    doc.text('Payment Method:', 14, finalY + 25);
-    doc.text('Bank: _______________', 14, finalY + 31);
-    doc.text('Account No: _______________', 14, finalY + 37);
-    doc.text('Account Name: _______________', 14, finalY + 43);
   });
 
   if (pick === 'all') {
@@ -635,14 +627,6 @@ function generateQuotationPDF() {
     doc.setFont(undefined, 'bold');
     doc.text(`TOTAL:`, 140, 50, { align: 'right' });
     doc.text(`RM ${grandTotal.toFixed(2)}`, 195, 50, { align: 'right' });
-
-    doc.setFontSize(9);
-    doc.setFont(undefined, 'normal');
-    doc.setTextColor(100);
-    doc.text('Payment Method:', 14, 70);
-    doc.text('Bank: _______________', 14, 76);
-    doc.text('Account No: _______________', 14, 82);
-    doc.text('Account Name: _______________', 14, 88);
   }
 
   const filename = pick === 'all' ? `quotation-all-${quoteNo}.pdf` : `quotation-${leagues[0].name}-${quoteNo}.pdf`;
