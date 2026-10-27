@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- OFL League Order Tracker v2.2 - Category Qty Totals -->
+<!-- OFL League Order Tracker v2.3 - League Clone -->
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
@@ -85,7 +85,7 @@
 <body>
 
 <h1>OFL League Order Tracker</h1>
-<div style="text-align:center;color:#888;font-size:0.85em;margin-top:-15px;margin-bottom:20px;">v2.2 - Category Qty Totals</div>
+<div style="text-align:center;color:#888;font-size:0.85em;margin-top:-15px;margin-bottom:20px;">v2.3 - League Clone</div>
 
 <div class="summary-cards">
   <div class="card revenue"><div class="label">Total Revenue (Client)</div><div class="value" id="totalRevenue">RM 0</div></div>
@@ -118,13 +118,13 @@
 const defaultData = {
   supplierList: [
     { name: "Medal", size: "", price: 3 },
-    { name: "Trophy Champion", size: "Size A", price: 119 },
-    { name: "Trophy Champion", size: "Size B", price: 109 },
-    { name: "Trophy Champion", size: "Size C", price: 90 },
+    { name: "Trophy Champion", size: "Size A", price: 135 },
+    { name: "Trophy Champion", size: "Size B", price: 115 },
+    { name: "Trophy Champion", size: "Size C", price: 81 },
     { name: "Top Scorer", size: "Size A", price: 22 },
-    { name: "Best GK", size: "Size B", price: 80 },
-    { name: "Best GK", size: "Size C", price: 70 },
-    { name: "Best GK", size: "Size D", price: 60 },
+    { name: "Best GK", size: "Size B", price: 70 },
+    { name: "Best GK", size: "Size C", price: 66 },
+    { name: "Best GK", size: "Size D", price: 62 },
     { name: "Mockup", size: "A3", price: 18 },
     { name: "Mockup", size: "A4", price: 15 },
     { name: "Trophy Sticker", size: "", price: 2.5 },
@@ -240,7 +240,7 @@ function render() {
     const section = document.createElement('div');
     section.className = 'league-section';
 
-    let html = `<div class="league-title">${league.name} <button class="btn btn-remove" onclick="removeLeague(${li})" style="float:right;margin-top:2px;">Remove</button></div>`;
+    let html = `<div class="league-title">${league.name} <button class="btn btn-remove" onclick="removeLeague(${li})" style="float:right;margin-top:2px;">Remove</button> <button class="btn" style="background:#1565c0;color:#fff;float:right;margin-top:2px;margin-right:5px;" onclick="cloneLeague(${li})">Clone</button></div>`;
     html += `<div class="table-container"><table><thead><tr>
       <th>Item</th><th>Qty</th>
       <th class="client-col">Price</th><th class="client-col">Postage</th><th class="client-col">Total Price</th>
@@ -351,6 +351,17 @@ function removeLeague(li) {
     render();
     saveData(false);
   }
+}
+
+function cloneLeague(li) {
+  const suggested = data.leagues[li].name + " (Copy)";
+  const newName = prompt("New league name:", suggested);
+  if (!newName) return;
+  const copy = JSON.parse(JSON.stringify(data.leagues[li]));
+  copy.name = newName;
+  data.leagues.splice(li + 1, 0, copy);
+  render();
+  saveData(false);
 }
 
 function applyCatSupplier(li, ci, field, value) {
