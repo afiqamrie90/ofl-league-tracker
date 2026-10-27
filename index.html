@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- OFL League Order Tracker v3.0 - Purchase Summary with Item+Size -->
+<!-- OFL League Order Tracker v3.1 - Profit Total Color by Sign -->
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
@@ -85,7 +85,7 @@
 <body>
 
 <h1>OFL League Order Tracker</h1>
-<div style="text-align:center;color:#888;font-size:0.85em;margin-top:-15px;margin-bottom:20px;">v3.0</div>
+<div style="text-align:center;color:#888;font-size:0.85em;margin-top:-15px;margin-bottom:20px;">v3.1</div>
 
 <div class="summary-cards">
   <div class="card revenue"><div class="label">Total Revenue (Client)</div><div class="value" id="totalRevenue">RM 0</div></div>
@@ -296,7 +296,7 @@ function render() {
       <td class="client-col" style="font-size:1.1em;color:#e94560;">${fmt(leagueRevenue)}</td>
       <td class="supplier-col" colspan="2"></td>
       <td class="supplier-col" style="font-size:1.1em;color:#e94560;">${fmt(leagueCost)}</td>
-      <td class="profit-col" style="font-size:1.1em;color:#e94560;">${fmt(leagueProfit)}</td>
+      <td class="profit-col" style="font-size:1.1em;color:${leagueProfit >= 0 ? '#4caf50' : '#ff6b6b'};">${fmt(leagueProfit)}</td>
       <td></td>
     </tr></tfoot></table></div>`;
     html += `<button class="btn btn-add add-row-btn" onclick="addCategory(${li})">+ Add Category</button>`;
