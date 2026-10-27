@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- OFL League Order Tracker v2.3 - League Clone -->
+<!-- OFL League Order Tracker v2.5 - Item Code (Remark) -->
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
@@ -85,7 +85,7 @@
 <body>
 
 <h1>OFL League Order Tracker</h1>
-<div style="text-align:center;color:#888;font-size:0.85em;margin-top:-15px;margin-bottom:20px;">v2.3 - League Clone</div>
+<div style="text-align:center;color:#888;font-size:0.85em;margin-top:-15px;margin-bottom:20px;">v2.5 - Item Code (Remark)</div>
 
 <div class="summary-cards">
   <div class="card revenue"><div class="label">Total Revenue (Client)</div><div class="value" id="totalRevenue">RM 0</div></div>
@@ -94,16 +94,21 @@
 </div>
 
 <div class="league-section">
-  <div class="league-title" style="border-bottom-color:#6a1b9a;color:#6a1b9a;">Supplier Master List <button class="btn btn-add" style="padding:4px 12px;font-size:0.7em;margin-left:10px;" onclick="addSupplierItem()">+ Add Item</button> <button class="btn" style="background:#e65100;color:#fff;padding:4px 12px;font-size:0.7em;margin-left:5px;" onclick="resetSupplier()">Reset Supplier</button></div>
+  <div class="league-title" style="border-bottom-color:#6a1b9a;color:#6a1b9a;">Supplier Master List <button class="btn btn-add" style="padding:4px 12px;font-size:0.7em;margin-left:10px;" onclick="addSupplierItem()">+ Add Item</button> <button class="btn" style="background:#e65100;color:#fff;padding:4px 12px;font-size:0.7em;margin-left:5px;" onclick="resetSupplier()">Reset Supplier</button> <button class="btn" style="background:#1565c0;color:#fff;padding:4px 12px;font-size:0.7em;margin-left:5px;" onclick="restoreSupplierDefaults()">Restore Default</button></div>
   <div class="table-container"><table id="supplierTable">
     <thead><tr>
-      <th>Item</th><th>Size</th><th>Price (RM)</th><th></th>
+      <th>Item</th><th>Size</th><th>Price (RM)</th><th>Remark (Code)</th><th></th>
     </tr></thead>
     <tbody id="supplierBody"></tbody>
   </table></div>
 </div>
 
 <div id="leagues"></div>
+
+<div class="league-section" id="purchaseSummarySection" style="display:none;">
+  <div class="league-title" style="border-bottom-color:#1565c0;color:#1565c0;">Purchase Summary (Semua Liga)</div>
+  <div id="purchaseSummary"></div>
+</div>
 
 <div class="btn-bar">
   <button class="btn btn-add" onclick="addLeague()">+ Add League</button>
@@ -117,17 +122,18 @@
 <script>
 const defaultData = {
   supplierList: [
-    { name: "Medal", size: "", price: 3 },
-    { name: "Trophy Champion", size: "Size A", price: 135 },
-    { name: "Trophy Champion", size: "Size B", price: 115 },
-    { name: "Trophy Champion", size: "Size C", price: 81 },
-    { name: "Top Scorer", size: "Size A", price: 22 },
-    { name: "Best GK", size: "Size B", price: 70 },
-    { name: "Best GK", size: "Size C", price: 66 },
-    { name: "Best GK", size: "Size D", price: 62 },
-    { name: "Mockup", size: "A3", price: 18 },
-    { name: "Mockup", size: "A4", price: 15 },
-    { name: "Trophy Sticker", size: "", price: 2.5 },
+    { name: "Medal", size: "", price: 3, remark: "Medal" },
+    { name: "Trophy Champion", size: "Size A", price: 135, remark: "Trophy Open" },
+    { name: "Trophy Champion", size: "Size B", price: 115, remark: "Trophy U14-U16" },
+    { name: "Trophy Champion", size: "Size C", price: 80, remark: "Piala U8-U12" },
+    { name: "Top Scorer", size: "Size B", price: 22, remark: "Top scorer B" },
+    { name: "Top Scorer", size: "Size C", price: 20, remark: "Top scorer C" },
+    { name: "Best GK", size: "Size B", price: 70, remark: "Best GK Open" },
+    { name: "Best GK", size: "Size C", price: 66, remark: "Best GK U14-U16" },
+    { name: "Best GK", size: "Size D", price: 62, remark: "Best GK U8-U12" },
+    { name: "Mockup", size: "A3", price: 18, remark: "A3" },
+    { name: "Mockup", size: "A4", price: 15, remark: "A4" },
+    { name: "Trophy Sticker", size: "", price: 2.5, remark: "Sticker" },
   ],
   leagues: [
     {
@@ -209,9 +215,10 @@ function renderSupplierList() {
   data.supplierList.forEach((item, i) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input style="width:140px;" value="${item.name}" onchange="data.supplierList[${i}].name=this.value;saveData(false)"></td>
-      <td><input style="width:80px;" value="${item.size}" onchange="data.supplierList[${i}].size=this.value;saveData(false)"></td>
+      <td><input style="width:140px;" value="${item.name || ''}" onchange="data.supplierList[${i}].name=this.value;saveData(false)"></td>
+      <td><input style="width:80px;" value="${item.size || ''}" onchange="data.supplierList[${i}].size=this.value;saveData(false)"></td>
       <td><input type="number" step="0.01" style="width:80px;" value="${item.price}" onchange="data.supplierList[${i}].price=+this.value;saveData(false)"></td>
+      <td><input style="width:140px;" value="${item.remark || ''}" onchange="data.supplierList[${i}].remark=this.value;saveData(false)"></td>
       <td><button class="btn btn-remove" onclick="removeSupplierItem(${i})">X</button></td>
     `;
     tbody.appendChild(tr);
@@ -219,9 +226,17 @@ function renderSupplierList() {
 }
 
 function addSupplierItem() {
-  data.supplierList.push({ name: "", size: "", price: 0 });
+  data.supplierList.push({ name: "", size: "", price: 0, remark: "" });
   renderSupplierList();
   saveData(false);
+}
+
+function restoreSupplierDefaults() {
+  if (confirm("Restore supplier master list ke default? Senarai sekarang akan diganti.")) {
+    data.supplierList = JSON.parse(JSON.stringify(defaultData.supplierList));
+    renderSupplierList();
+    saveData(false);
+  }
 }
 
 function removeSupplierItem(i) {
@@ -293,10 +308,42 @@ function render() {
   document.getElementById('totalRevenue').textContent = fmt(grandRevenue);
   document.getElementById('totalCost').textContent = fmt(grandCost);
   document.getElementById('totalProfit').textContent = fmt(grandProfit);
+  renderPurchaseSummary();
+}
+
+function renderPurchaseSummary() {
+  const agg = {};
+  let hasData = false;
+  data.leagues.forEach(league => {
+    league.categories.forEach(cat => {
+      if (!agg[cat.name]) agg[cat.name] = {};
+      cat.items.forEach(item => {
+        hasData = true;
+        const key = (item.code || item.item || '(no name)').trim();
+        agg[cat.name][key] = (agg[cat.name][key] || 0) + (+item.qty || 0);
+      });
+    });
+  });
+  const section = document.getElementById('purchaseSummarySection');
+  const container = document.getElementById('purchaseSummary');
+  if (!hasData) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  let html = '<div class="table-container"><table><thead><tr><th style="width:25%;">Category</th><th>Code</th><th style="width:15%;">Total Qty</th></tr></thead><tbody>';
+  Object.keys(agg).forEach(catName => {
+    const items = Object.entries(agg[catName]);
+    let catQty = 0;
+    items.forEach(([name, qty], idx) => {
+      catQty += qty;
+      html += `<tr><td style="font-weight:700;">${idx === 0 ? catName : ''}</td><td style="text-align:left;padding-left:12px;">${name}</td><td><strong>${qty}</strong></td></tr>`;
+    });
+    html += `<tr class="cat-total"><td colspan="2" style="text-align:right;">Total ${catName}:</td><td>${catQty}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
 }
 
 function addItem(li, ci) {
-  const supplierOptions = data.supplierList.map((s, i) => `${i + 1}. ${s.name}${s.size ? ' - ' + s.size : ''} (RM ${s.price})`).join('\n');
+  const supplierOptions = data.supplierList.map((s, i) => `${i + 1}. [${s.remark || s.name}] ${s.name}${s.size ? ' ' + s.size : ''} (RM ${s.price})`).join('\n');
   const choice = prompt(`Select supplier item:\n${supplierOptions}\n\nEnter number (1-${data.supplierList.length}) or 0 for custom:`);
   const choiceNum = parseInt(choice);
 
@@ -307,12 +354,13 @@ function addItem(li, ci) {
 
   if (choiceNum === 0) {
     // Custom item
-    data.leagues[li].categories[ci].items.push({ item: "", qty: 1, sPrice: 0, sPost: 0, cPrice: 0, cPost: 0 });
+    data.leagues[li].categories[ci].items.push({ item: "", code: "", qty: 1, sPrice: 0, sPost: 0, cPrice: 0, cPost: 0 });
   } else {
     // Select from supplier list
     const selected = data.supplierList[choiceNum - 1];
     data.leagues[li].categories[ci].items.push({
-      item: `${selected.name}${selected.size ? ' ' + selected.size : ''}`,
+      item: selected.remark || selected.name,
+      code: selected.remark || '',
       qty: 1,
       sPrice: selected.price,
       sPost: 0,
